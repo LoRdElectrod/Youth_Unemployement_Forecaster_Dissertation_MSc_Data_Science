@@ -1,0 +1,9 @@
+polars
+prophet 
+statsmodels 
+xgboost 
+streamlit 
+plotly 
+scikit-learn
+matplotlib
+seaborn
