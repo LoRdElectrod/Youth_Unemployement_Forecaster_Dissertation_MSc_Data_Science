@@ -61,22 +61,22 @@ The Exploratory Data Analysis ([eda.py](file:///c:/Users/sharm/OneDrive%20-%20Un
 ### Missing Data Visualization
 The missing data heatmap confirms that our primary exogenous parameters (CPI, vacancies, and interest rates) are fully populated across the timeline, leaving only the trailing GDP years (pre-splicing) with missing values.
 
-![Missing Value Heatmap](plots/missing_val.png)
+![Missing Value Heatmap](final_plots/missing_val.png)
 
 ### Outlier Detection
 Plotting the raw timeline highlights the extreme "0192" date typo outlier that compresses the true time series:
 
-![Outlier Scatter Plot](plots/outlier.png)
+![Outlier Scatter Plot](final_plots/outlier.png)
 
 ### GDP Trailing Lag
 The lineplot shows the abrupt end-points in the raw GDP records, demonstrating the necessity of the Institutional Growth Rate Splicing approach:
 
-![GDP Over Time](plots/Regional_GDP_overtime.png)
+![GDP Over Time](final_plots/Regional_GDP_overtime.png)
 
 ### Correlation Matrix & VIF Scores
 A Variance Inflation Factor (VIF) analysis was run on the exogenous variables to rule out multicollinearity:
 
-![Feature Correlation Matrix](plots/Correlation_Matrix.png)
+![Feature Correlation Matrix](final_plots/Correlation_Matrix.png)
 
 **VIF Scores:**
 - **Inflation Rate:** 1.43
@@ -91,7 +91,7 @@ A Variance Inflation Factor (VIF) analysis was run on the exogenous variables to
 ## 📈 Macroeconomic Anomalies & Structural Breaks ([structural_breaks.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/structural_breaks.py))
 A central contribution of the research is analyzing the structural break impact of major macroeconomic shocks on youth employment patterns.
 
-![Structural Breaks Timeline](plots/Structural_breaks.png)
+![Structural Breaks Timeline](final_plots/Structural_breaks.png)
 
 ### The 2010–2015 "Secondary Shock" Analysis
 Beyond the immediate spikes of the **2008 Financial Crash** and the **COVID-19 Pandemic**, the analysis identifies a severe, prolonged **Secondary Shock Period (2010–2015)** driven by three main factors:
@@ -108,14 +108,14 @@ Each model was trained on historical data up to **2023 Q4** and evaluated agains
 Here is the visual comparison of forecasts across the different paradigms:
 
 #### London Model Forecasts
-- **SARIMAX Model Forecast:** ![SARIMAX London](plots/SARIMAX_London.png)
-- **Prophet Model Forecast:** ![Prophet London](plots/Prophet_Baseline.png)
-- **XGBoost Model Forecast:** ![XGBoost London](plots/XGBOOST_london.png)
+- **SARIMAX Model Forecast:** ![SARIMAX London](final_plots/SARIMAX_London.png)
+- **Prophet Model Forecast:** ![Prophet London](final_plots/Prophet_Baseline.png)
+- **XGBoost Model Forecast:** ![XGBoost London](final_plots/XGBOOST_london.png)
 
 #### North East Model Forecasts
-- **SARIMAX Model Forecast:** ![SARIMAX North East](plots/SARIMAX_NORTH_EAST.png)
-- **Prophet Model Forecast:** ![Prophet North East](plots/Prophet_Baseline_North_East.png)
-- **XGBoost Model Forecast:** ![XGBoost North East](plots/XGBOOST_north_East.png)
+- **SARIMAX Model Forecast:** ![SARIMAX North East](final_plots/SARIMAX_NORTH_EAST.png)
+- **Prophet Model Forecast:** ![Prophet North East](final_plots/Prophet_Baseline_North_East.png)
+- **XGBoost Model Forecast:** ![XGBoost North East](final_plots/XGBOOST_north_East.png)
 
 ### Statistical Benchmarking (MAE & RMSE)
 
@@ -139,7 +139,7 @@ $$\text{Human Margin of Error} = \left(\frac{\text{RMSE}}{100}\right) \times \te
 - **London** (Active Youth Labor Force: ~600,000): An RMSE of 3.77% translates to a forecasting uncertainty of **+/- 22,620** real young individuals.
 - **North East** (Active Youth Labor Force: ~150,000): An RMSE of 3.99% translates to a forecasting uncertainty of **+/- 5,985** real young individuals.
 
-![Human Impact Bar Chart](plots/human_impact_evaluation_bar.png)
+![Human Impact Bar Chart](final_plots/human_impact_evaluation_bar.png)
 
 ---
 
@@ -148,7 +148,7 @@ The relative importance plots from XGBoost reveal different driver mechanisms ac
 
 | London Macro Drivers | North East Macro Drivers |
 | :---: | :---: |
-| ![London Drivers](plots/Macroeconomic_DRiver_xgboost_London.png) | ![North East Drivers](plots/Macroeconomic_DRiver_xgboost_north_East.png) |
+| ![London Drivers](final_plots/Macroeconomic_DRiver_xgboost_London.png) | ![North East Drivers](final_plots/Macroeconomic_DRiver_xgboost_north_East.png) |
 
 - **London** is highly sensitive to national labor demand indicators (`UK_Vacancies_Thousands_Lag_1`) and regional financial output (`GDP_Value_mil_Lag_4`).
 - The **North East** is highly path-dependent, showing a heavy reliance on historical target lags (`Youth_Unemployment_Rate_Lag_1`) and inflation shocks (`Inflation_Rate_Lag_4`).
