@@ -13,8 +13,9 @@ def engineer_features():
         
     df = pd.read_csv(input_path)
     
-    # 1. Clean the 0192 outlier and parse dates (using your proven logic)
-    df = df[~df['Date'].str.startswith('0192')].copy()
+    # 1. Clean the 0192 outlier and parse dates
+    # Forced to string first just in case pandas interprets it differently
+    df = df[~df['Date'].astype(str).str.startswith('0192')].copy()
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
     df = df[df['Date'].notna()].copy()
     df = df.sort_values(by=['Region', 'Date']).reset_index(drop=True)
@@ -46,19 +47,21 @@ def engineer_features():
         'GDP_Value_mil': [1, 4],
         'Inflation_Rate': [1, 4],
         'UK_Vacancies_Thousands': [1, 4],
-        'BoE_Base_Rate': [1, 2, 4] # Interest rates have longer delay impacts
+        'BoE_Base_Rate': [1, 2, 4], # Interest rates have longer delay impacts
+        'RTI_Payrolled_Employees': [1, 4] # <-- NEW ADDITION: Capturing HMRC payroll momentum
     }
     
     for col, lag_list in lags.items():
-        for lag in lag_list:
-            df[f'{col}_Lag_{lag}'] = df.groupby('Region')[col].shift(lag)
+        if col in df.columns:
+            for lag in lag_list:
+                df[f'{col}_Lag_{lag}'] = df.groupby('Region')[col].shift(lag)
             
     # 4. Cyclical Encoding for Seasonality
     df['Quarter'] = df['Date'].dt.quarter
     df['Quarter_Sin'] = np.sin(2 * np.pi * df['Quarter'] / 4)
     df['Quarter_Cos'] = np.cos(2 * np.pi * df['Quarter'] / 4)
     df = df.drop(columns=['Quarter'])
-
+    
     # 5. Final Cleanup
     # Shifting creates NaNs at the very beginning of the dataset
     # We will drop these initial rows so XGBoost gets a perfectly clean matrix

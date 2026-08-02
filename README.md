@@ -10,14 +10,14 @@ By comparing two economically distinct regions—**London** (a services-dominate
 
 ### Research Paradigm
 The project contrasts three distinct modeling paradigms:
-1. **Traditional Econometrics:** SARIMAX (Seasonal Autoregressive Integrated Moving Average with Exogenous Regressors)
+1. **Traditional Econometrics:** SARIMAX (Seasonal Autoregressive Integrated Moving Average with Exogenous Regressors) — *Refined with dynamic ADF-based stationarity differencing and scaled exogenous variables to ensure convergence and numerical stability.*
 2. **Additive Seasonal Modeling:** Facebook Prophet (optimized for structural time series with covariates)
-3. **Machine Learning Gradient Boosting:** XGBoost (Gradient-Boosted Decision Trees with engineered lag profiles)
+3. **Machine Learning Gradient Boosting:** XGBoost (Gradient-Boosted Decision Trees with engineered lag profiles, updated to incorporate HMRC payroll momentum features)
 
 ---
 
 ## 🛠️ Macroeconomic Variables & Data Dictionary
-To capture labor market dynamics, the target variable is mapped against four primary exogenous drivers:
+To capture labor market dynamics, the target variable is mapped against five primary exogenous drivers:
 
 | Macroeconomic Vector | Dataset Feature Name | Source | Description |
 | :--- | :--- | :--- | :--- |
@@ -26,6 +26,7 @@ To capture labor market dynamics, the target variable is mapped against four pri
 | **The Squeeze** | `Inflation_Rate` | ONS Consumer Price Indices | Mean quarterly UK CPI Annual Rate (%) reflecting consumer pressure. |
 | **The Demand** | `UK_Vacancies_Thousands` | ONS Vacancy Survey | National labor demand indicator (total vacancies in thousands). |
 | **The Budget** | `BoE_Base_Rate` | Bank of England (BoE) | Official cost of borrowing dictating corporate hiring budgets. |
+| **The Payroll (New)**| `RTI_Payrolled_Employees` | HMRC PAYE Real Time Info | Mean quarterly payrolled employees (NUTS1 regional data) from PAYE RTI. |
 
 ---
 
@@ -43,14 +44,15 @@ graph TD
 ```
 
 ### 1. Ingestion & Temporal Standardization ([ingestion.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/ingestion.py))
-- **Temporal Alignment:** Combines datasets reported at mismatched frequencies (annual GDP, monthly CPI, rolling 3-month average unemployment, and irregular BoE rate adjustments) by standardizing to a unified quarterly timeline (representing dates on `-03-31`, `-06-30`, `-09-30`, and `-12-31`).
+- **Temporal Alignment:** Combines datasets reported at mismatched frequencies (annual GDP, monthly CPI, monthly HMRC payroll, rolling 3-month average unemployment, and irregular BoE rate adjustments) by standardizing to a unified quarterly timeline (representing dates on `-03-31`, `-06-30`, `-09-30`, and `-12-31`).
+- **HMRC PAYE RTI Processing:** Loads sheet `7. Employees (NUTS1)` from the raw PAYE Real Time Information Excel spreadsheet, filters for London and North East, computes quarterly means (`RTI_Payrolled_Employees`), and aligns them to quarter-ends.
 - **ASOF Joining:** Integrates Bank of England rate changes dynamically, fetching the rate active at the exact close of each quarter using Polars' `join_asof` backward strategy.
 
 ### 2. Data Cleaning & Splicing ([features.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/features.py))
 - **Anomalous Outlier Removal:** Fixes a critical historical formatting anomaly where a typo representing the year "0192" compressed the timeline.
 - **Institutional Growth Rate Splicing (IGRS):** The ONS publishes regional GDP with a multi-year lag. To prevent artificial bias or unrealistic trend-line extrapolation, the pipeline compounds the last recorded GDP value across missing trailing quarters (2024–2025) at a quarterly rate of **0.22%**, representing the official annual economic growth projection of **0.9%** forecasted by the Office for Budget Responsibility (OBR) and IMF:
 $$\text{Quarterly Growth Rate} = (1 + 0.009)^{0.25} - 1 \approx 0.00224$$
-- **Lag Profiles:** Generates 1-quarter and 4-quarter lags for features to capture delayed macroeconomic effects. For the BoE Base Rate, a 2-quarter lag is also generated to account for interest rate monetary transmission delays.
+- **Lag Profiles:** Generates 1-quarter and 4-quarter lags for features to capture delayed macroeconomic effects (including the new `RTI_Payrolled_Employees` variable). For the BoE Base Rate, a 2-quarter lag is also generated to account for interest rate monetary transmission delays.
 - **Cyclical Seasonality:** Encodes seasonality using sine and cosine transformations of the quarterly timeline to preserve temporal continuity.
 
 ---
@@ -76,15 +78,16 @@ The lineplot shows the abrupt end-points in the raw GDP records, demonstrating t
 ### Correlation Matrix & VIF Scores
 A Variance Inflation Factor (VIF) analysis was run on the exogenous variables to rule out multicollinearity:
 
-![Feature Correlation Matrix](final_plots/Correlation_Matrix.png)
+![Feature Correlation Matrix](final_plots/Correlation%20Matrix%20(with%20HMRC%20RTI).png)
 
-**VIF Scores:**
-- **Inflation Rate:** 1.43
-- **UK Vacancies (Thousands):** 1.42
-- **GDP Value (m):** 1.02
-- **BoE Base Rate:** 1.03
+**VIF Scores (Including HMRC RTI):**
+- **Inflation Rate:** 1.54
+- **UK Vacancies (Thousands):** 2.10
+- **GDP Value (m):** 1.25
+- **BoE Base Rate:** 1.13
+- **RTI Payrolled Employees:** 2.45
 
-*Interpretation:* All features return VIF scores well below the conservative threshold of 5.0, confirming that the explanatory variables are structurally independent and can be safely modeled simultaneously.
+*Interpretation:* All features return VIF scores well below the conservative threshold of 5.0, confirming that the explanatory variables (including the newly added HMRC RTI payroll feature) are structurally independent and can be safely modeled simultaneously.
 
 ---
 
@@ -108,14 +111,14 @@ Each model was trained on historical data up to **2023 Q4** and evaluated agains
 Here is the visual comparison of forecasts across the different paradigms:
 
 #### London Model Forecasts
-- **SARIMAX Model Forecast:** ![SARIMAX London](final_plots/SARIMAX_London.png)
-- **Prophet Model Forecast:** ![Prophet London](final_plots/Prophet_Baseline.png)
-- **XGBoost Model Forecast:** ![XGBoost London](final_plots/XGBOOST_london.png)
+- **SARIMAX Model Forecast:** ![SARIMAX London](final_plots/SARIMAX_LONDON_RTI_scripting.png)
+- **Prophet Model Forecast:** ![Prophet London](final_plots/Prophet_Baseline_LONDON_RTI.png)
+- **XGBoost Model Forecast:** ![XGBoost London](final_plots/XGBOOST_london_RTI.png)
 
 #### North East Model Forecasts
-- **SARIMAX Model Forecast:** ![SARIMAX North East](final_plots/SARIMAX_NORTH_EAST.png)
-- **Prophet Model Forecast:** ![Prophet North East](final_plots/Prophet_Baseline_North_East.png)
-- **XGBoost Model Forecast:** ![XGBoost North East](final_plots/XGBOOST_north_East.png)
+- **SARIMAX Model Forecast:** ![SARIMAX North East](final_plots/SARIMAX_NORTH_EAST_RTI_scripting.png)
+- **Prophet Model Forecast:** ![Prophet North East](final_plots/Prophet_Baseline_North_East_RTI.png)
+- **XGBoost Model Forecast:** ![XGBoost North East](final_plots/XGBOOST_north_East_RTI.png)
 
 ### Statistical Benchmarking (MAE & RMSE)
 
@@ -148,7 +151,7 @@ The relative importance plots from XGBoost reveal different driver mechanisms ac
 
 | London Macro Drivers | North East Macro Drivers |
 | :---: | :---: |
-| ![London Drivers](final_plots/Macroeconomic_DRiver_xgboost_London.png) | ![North East Drivers](final_plots/Macroeconomic_DRiver_xgboost_north_East.png) |
+| ![London Drivers](final_plots/Macroeconomic_DRiver_xgboost_London_RTI.png) | ![North East Drivers](final_plots/Macroeconomic_DRiver_xgboost_north_East_RTI.png) |
 
 - **London** is highly sensitive to national labor demand indicators (`UK_Vacancies_Thousands_Lag_1`) and regional financial output (`GDP_Value_mil_Lag_4`).
 - The **North East** is highly path-dependent, showing a heavy reliance on historical target lags (`Youth_Unemployment_Rate_Lag_1`) and inflation shocks (`Inflation_Rate_Lag_4`).
