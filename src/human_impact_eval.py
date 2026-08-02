@@ -9,7 +9,7 @@ def calculate_human_impact():
     # Using the exact RMSE values from your XGBoost backtest
     results = {
         'Region': ['London', 'North East'],
-        'XGBoost_RMSE_Pct': [3.77, 3.99],
+        'XGBoost_RMSE_Pct': [3.06, 4.34],
         # Estimated active labor force (16-24) from ONS demographic data
         'Active_Youth_Labor_Force': [600000, 150000] 
     }

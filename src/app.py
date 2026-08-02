@@ -41,8 +41,8 @@ region_df = df[df['Region'] == selected_region].sort_values('Date').reset_index(
 # Define regional parameters for human impact math
 labor_force_map = {"London": 600000, "North East": 150000}
 rmse_map = {
-    "London": {"XGBoost": 3.77, "Prophet": 3.77, "SARIMAX": 11.22},
-    "North East": {"XGBoost": 3.99, "Prophet": 8.35, "SARIMAX": 8.34}
+    "London": {"XGBoost": 3.06, "Prophet": 3.77, "SARIMAX": 11.22},
+    "North East": {"XGBoost": 4.34, "Prophet": 8.35, "SARIMAX": 8.34}
 }
 
 # --- HEADER SECTION ---
@@ -139,8 +139,8 @@ with left_col:
     # Render static table mapping verified performance
     perf_data = {
         "Model Architecture": ["SARIMAX (Econometrics)", "Facebook Prophet (Additive)", "XGBoost (Gradient Boosted Trees)"],
-        "MAE (%)": [10.15 if selected_region == "London" else 6.30, 3.20 if selected_region == "London" else 7.04, 3.17 if selected_region == "London" else 3.55],
-        "RMSE (%)": [11.22 if selected_region == "London" else 8.34, 3.77 if selected_region == "London" else 8.35, 3.77 if selected_region == "London" else 3.99]
+        "MAE (%)": [10.15 if selected_region == "London" else 6.30, 3.20 if selected_region == "London" else 7.04, 2.37 if selected_region == "London" else 3.51],
+        "RMSE (%)": [11.22 if selected_region == "London" else 8.34, 3.77 if selected_region == "London" else 8.35, 3.06 if selected_region == "London" else 4.34]
     }
     st.table(pd.DataFrame(perf_data))
     

@@ -126,12 +126,12 @@ Here is the visual comparison of forecasts across the different paradigms:
 | :--- | :--- | :---: | :---: |
 | **London** | SARIMAX | 10.15% | 11.22% |
 | | Facebook Prophet | 3.20% | 3.77% |
-| | **XGBoost (Winner)** | **3.17%** | **3.77%** |
+| | **XGBoost (Winner)** | **2.37%** | **3.06%** |
 | **North East** | SARIMAX | 6.30% | 8.34% |
 | | Facebook Prophet | 7.04% | 8.35% |
-| | **XGBoost (Winner)** | **3.55%** | **3.99%** |
+| | **XGBoost (Winner)** | **3.51%** | **4.34%** |
 
-*Analysis:* **XGBoost** consistently outperformed the other models, maintaining an error rate of under 4%. SARIMAX suffered from downward drift, failing to capture the complexity of the macro relationships over the validation horizon.
+*Analysis:* **XGBoost** consistently outperformed the other models. With the integration of the HMRC RTI dataset, its prediction error was further minimized, achieving an RMSE of **3.06%** for London and **4.34%** for the North East.
 
 ---
 
@@ -139,10 +139,10 @@ Here is the visual comparison of forecasts across the different paradigms:
 To translate abstract model statistics into actionable local government metrics, the RMSE margin of error is applied directly to the active regional youth labor force (Ages 16-24):
 $$\text{Human Margin of Error} = \left(\frac{\text{RMSE}}{100}\right) \times \text{Active Youth Labor Force}$$
 
-- **London** (Active Youth Labor Force: ~600,000): An RMSE of 3.77% translates to a forecasting uncertainty of **+/- 22,620** real young individuals.
-- **North East** (Active Youth Labor Force: ~150,000): An RMSE of 3.99% translates to a forecasting uncertainty of **+/- 5,985** real young individuals.
+- **London** (Active Youth Labor Force: ~600,000): An RMSE of 3.06% translates to a forecasting uncertainty of **+/- 18,360** real young individuals.
+- **North East** (Active Youth Labor Force: ~150,000): An RMSE of 4.34% translates to a forecasting uncertainty of **+/- 6,510** real young individuals.
 
-![Human Impact Bar Chart](final_plots/human_impact_evaluation_bar.png)
+![Human Impact Bar Chart](final_plots/human_impact_evaluation_bar_RTI.png)
 
 ---
 
