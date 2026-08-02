@@ -41,8 +41,8 @@ region_df = df[df['Region'] == selected_region].sort_values('Date').reset_index(
 # Define regional parameters for human impact math
 labor_force_map = {"London": 600000, "North East": 150000}
 rmse_map = {
-    "London": {"XGBoost": 3.06, "Prophet": 3.77, "SARIMAX": 11.22},
-    "North East": {"XGBoost": 4.34, "Prophet": 8.35, "SARIMAX": 8.34}
+    "London": {"XGBoost": 3.06, "Prophet": 5.44, "SARIMAX": 27.13},
+    "North East": {"XGBoost": 4.34, "Prophet": 12.09, "SARIMAX": 9.52}
 }
 
 # --- HEADER SECTION ---
@@ -139,8 +139,8 @@ with left_col:
     # Render static table mapping verified performance
     perf_data = {
         "Model Architecture": ["SARIMAX (Econometrics)", "Facebook Prophet (Additive)", "XGBoost (Gradient Boosted Trees)"],
-        "MAE (%)": [10.15 if selected_region == "London" else 6.30, 3.20 if selected_region == "London" else 7.04, 2.37 if selected_region == "London" else 3.51],
-        "RMSE (%)": [11.22 if selected_region == "London" else 8.34, 3.77 if selected_region == "London" else 8.35, 3.06 if selected_region == "London" else 4.34]
+        "MAE (%)": [23.96 if selected_region == "London" else 7.27, 5.06 if selected_region == "London" else 10.54, 2.37 if selected_region == "London" else 3.51],
+        "RMSE (%)": [27.13 if selected_region == "London" else 9.52, 5.44 if selected_region == "London" else 12.09, 3.06 if selected_region == "London" else 4.34]
     }
     st.table(pd.DataFrame(perf_data))
     
@@ -164,7 +164,7 @@ with right_col:
 st.markdown("---")
 
 # --- INTERACTIVE LOCAL TIME-AWARE RAG ---
-st.header("🤖 Time-Aware Local Generative AI Advisor")
+st.header("Time-Aware Local Generative AI Advisor")
 st.markdown("Leverage a local `Ollama` language model reading your real-time dataframe parameters to synthesize institutional analysis panels.")
 
 user_query = st.text_input("Ask the AI Advisor regarding regional risk factors:", 

@@ -124,11 +124,11 @@ Here is the visual comparison of forecasts across the different paradigms:
 
 | Region | Model Architecture | Mean Absolute Error (MAE) | Root Mean Squared Error (RMSE) |
 | :--- | :--- | :---: | :---: |
-| **London** | SARIMAX | 10.15% | 11.22% |
-| | Facebook Prophet | 3.20% | 3.77% |
+| **London** | SARIMAX | 23.96% | 27.13% |
+| | Facebook Prophet | 5.06% | 5.44% |
 | | **XGBoost (Winner)** | **2.37%** | **3.06%** |
-| **North East** | SARIMAX | 6.30% | 8.34% |
-| | Facebook Prophet | 7.04% | 8.35% |
+| **North East** | SARIMAX | 7.27% | 9.52% |
+| | Facebook Prophet | 10.54% | 12.09% |
 | | **XGBoost (Winner)** | **3.51%** | **4.34%** |
 
 *Analysis:* **XGBoost** consistently outperformed the other models. With the integration of the HMRC RTI dataset, its prediction error was further minimized, achieving an RMSE of **3.06%** for London and **4.34%** for the North East.
