@@ -163,8 +163,9 @@ def run_multicollinearity_and_vif():
 
     features = ['Inflation_Rate', 'UK_Vacancies_Thousands', 'GDP_Value_mil', 'BoE_Base_Rate', 'RTI_Payrolled_Employees']
     
-    if 'RTI_Payrolled_Employees' not in df.columns:
-        print("[!] Error: 'RTI_Payrolled_Employees' column missing. Please ingestion correct data.")
+    missing_features = [col for col in features if col not in df.columns]
+    if missing_features:
+        print(f"[!] Error: Missing required columns for VIF analysis: {set(missing_features)}")
         return
 
     df_features = df[features].dropna()

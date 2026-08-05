@@ -36,7 +36,8 @@ To capture labor market dynamics, the target variable is mapped against five pri
 graph TD
     A[Raw Data: ONS & BoE CSVs/XLSX] -->|data_ingestion.py| B[Merge and Temporal Standardization]
     B -->|master_dataset.csv| C[eda_and_diagnostics.py]
-    C -->|Identify Outliers & Multicollinearity| D[feature_engineering.py]
+    B -->|master_dataset.csv| D[feature_engineering.py]
+    C -->|Identify Outliers & Multicollinearity| Diagnostics[Diagnostics & VIF Reports]
     D -->|Institutional Growth Rate Splicing & Lag Generation| E[ml_matrix.csv]
     E -->|Model Training & Backtesting| F[modeling.py]
     F -->|rmse_map & labor_force_map| G[modeling.py]
