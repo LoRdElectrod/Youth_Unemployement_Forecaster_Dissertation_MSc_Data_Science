@@ -34,21 +34,21 @@ To capture labor market dynamics, the target variable is mapped against five pri
 
 ```mermaid
 graph TD
-    A[Raw Data: ONS & BoE CSVs/XLSX] -->|ingestion.py| B[Merge and Temporal Standardization]
-    B -->|master_dataset.csv| C[eda.py & vif_check.py]
-    C -->|Identify Outliers & Multicollinearity| D[features.py]
+    A[Raw Data: ONS & BoE CSVs/XLSX] -->|data_ingestion.py| B[Merge and Temporal Standardization]
+    B -->|master_dataset.csv| C[eda_and_diagnostics.py]
+    C -->|Identify Outliers & Multicollinearity| D[feature_engineering.py]
     D -->|Institutional Growth Rate Splicing & Lag Generation| E[ml_matrix.csv]
-    E -->|Model Training & Backtesting| F[model_sarimax.py / model_prophet.py / model_xgboost.py]
-    F -->|rmse_map & labor_force_map| G[human_impact_eval.py]
+    E -->|Model Training & Backtesting| F[modeling.py]
+    F -->|rmse_map & labor_force_map| G[modeling.py]
     G -->|Interactive Execution & Ollama RAG| H[Streamlit BI Dashboard: app.py]
 ```
 
-### 1. Ingestion & Temporal Standardization ([ingestion.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/ingestion.py))
+### 1. Ingestion & Temporal Standardization ([data_ingestion.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/data_ingestion.py))
 - **Temporal Alignment:** Combines datasets reported at mismatched frequencies (annual GDP, monthly CPI, monthly HMRC payroll, rolling 3-month average unemployment, and irregular BoE rate adjustments) by standardizing to a unified quarterly timeline (representing dates on `-03-31`, `-06-30`, `-09-30`, and `-12-31`).
 - **HMRC PAYE RTI Processing:** Loads sheet `7. Employees (NUTS1)` from the raw PAYE Real Time Information Excel spreadsheet, filters for London and North East, computes quarterly means (`RTI_Payrolled_Employees`), and aligns them to quarter-ends.
 - **ASOF Joining:** Integrates Bank of England rate changes dynamically, fetching the rate active at the exact close of each quarter using Polars' `join_asof` backward strategy.
 
-### 2. Data Cleaning & Splicing ([features.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/features.py))
+### 2. Data Cleaning & Splicing ([feature_engineering.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/feature_engineering.py))
 - **Anomalous Outlier Removal:** Fixes a critical historical formatting anomaly where a typo representing the year "0192" compressed the timeline.
 - **Institutional Growth Rate Splicing (IGRS):** The ONS publishes regional GDP with a multi-year lag. To prevent artificial bias or unrealistic trend-line extrapolation, the pipeline compounds the last recorded GDP value across missing trailing quarters (2024–2025) at a quarterly rate of **0.22%**, representing the official annual economic growth projection of **0.9%** forecasted by the Office for Budget Responsibility (OBR) and IMF:
 $$\text{Quarterly Growth Rate} = (1 + 0.009)^{0.25} - 1 \approx 0.00224$$
@@ -58,7 +58,7 @@ $$\text{Quarterly Growth Rate} = (1 + 0.009)^{0.25} - 1 \approx 0.00224$$
 ---
 
 ## 📊 Exploratory Data Analysis & Multicollinearity
-The Exploratory Data Analysis ([eda.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/eda.py)) and Multicollinearity Check ([vif_check.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/vif_check.py)) verified the structural integrity of the feature matrix before modeling.
+The Exploratory Data Analysis and Diagnostics ([eda_and_diagnostics.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/eda_and_diagnostics.py)) verified the structural integrity of the feature matrix before modeling.
 
 ### Missing Data Visualization
 The missing data heatmap confirms that our primary exogenous parameters (CPI, vacancies, and interest rates) are fully populated across the timeline, leaving only the trailing GDP years (pre-splicing) with missing values.
@@ -91,7 +91,7 @@ A Variance Inflation Factor (VIF) analysis was run on the exogenous variables to
 
 ---
 
-## 📈 Macroeconomic Anomalies & Structural Breaks ([structural_breaks.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/structural_breaks.py))
+## 📈 Macroeconomic Anomalies & Structural Breaks ([eda_and_diagnostics.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/eda_and_diagnostics.py))
 A central contribution of the research is analyzing the structural break impact of major macroeconomic shocks on youth employment patterns.
 
 ![Structural Breaks Timeline](final_plots/Structural_breaks.png)
@@ -124,23 +124,23 @@ Here is the visual comparison of forecasts across the different paradigms:
 
 | Region | Model Architecture | Mean Absolute Error (MAE) | Root Mean Squared Error (RMSE) |
 | :--- | :--- | :---: | :---: |
-| **London** | SARIMAX | 23.96% | 27.13% |
-| | Facebook Prophet | 5.06% | 5.44% |
-| | **XGBoost (Winner)** | **2.37%** | **3.06%** |
-| **North East** | SARIMAX | 7.27% | 9.52% |
-| | Facebook Prophet | 10.54% | 12.09% |
-| | **XGBoost (Winner)** | **3.51%** | **4.34%** |
+| **London** | SARIMAX | 4.76% | 5.46% |
+| | Facebook Prophet | 5.36% | 5.73% |
+| | **XGBoost (Winner)** | **2.70%** | **3.48%** |
+| **North East** | **SARIMAX (Winner on MAE)** | **4.53%** | 6.47% |
+| | Facebook Prophet | 8.83% | 10.54% |
+| | **XGBoost (Winner on RMSE)** | 5.04% | **5.94%** |
 
-*Analysis:* **XGBoost** consistently outperformed the other models. With the integration of the HMRC RTI dataset, its prediction error was further minimized, achieving an RMSE of **3.06%** for London and **4.34%** for the North East.
+*Analysis:* **XGBoost** achieved the lowest prediction RMSE error for London and the North East, while **SARIMAX** achieved the lowest MAE error for the North East.
 
 ---
 
-## 🧑‍🤝‍🧑 Policymaker Evaluation: Absolute Human Impact ([human_impact_eval.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/human_impact_eval.py))
+## 🧑‍🤝‍🧑 Policymaker Evaluation: Absolute Human Impact ([modeling.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/modeling.py))
 To translate abstract model statistics into actionable local government metrics, the RMSE margin of error is applied directly to the active regional youth labor force (Ages 16-24):
 $$\text{Human Margin of Error} = \left(\frac{\text{RMSE}}{100}\right) \times \text{Active Youth Labor Force}$$
 
-- **London** (Active Youth Labor Force: ~600,000): An RMSE of 3.06% translates to a forecasting uncertainty of **+/- 18,360** real young individuals.
-- **North East** (Active Youth Labor Force: ~150,000): An RMSE of 4.34% translates to a forecasting uncertainty of **+/- 6,510** real young individuals.
+- **London** (Active Youth Labor Force: ~600,000): An RMSE of 3.48% translates to a forecasting uncertainty of **+/- 20,899** real young individuals.
+- **North East** (Active Youth Labor Force: ~150,000): An RMSE of 5.94% translates to a forecasting uncertainty of **+/- 8,910** real young individuals.
 
 ![Human Impact Bar Chart](final_plots/human_impact_evaluation_bar_RTI.png)
 
@@ -181,34 +181,26 @@ pip install -r requirements.txt
 ### 2. Run the Data Pipeline
 Recreate the master dataset and engineer features:
 ```bash
-# Standardize and merge datasets
-python src/ingestion.py
+# Standardize and merge datasets (FRED, ONS, Bank of England, HMRC RTI)
+python src/data_ingestion.py
 
 # Perform GDP splicing, cyclical encoding, and lag matrix construction
-python src/features.py
+python src/feature_engineering.py
 ```
-*(Scripts: [src/ingestion.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/ingestion.py) and [src/features.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/features.py))*
+*(Pipeline Scripts: [src/data_ingestion.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/data_ingestion.py) and [src/feature_engineering.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/feature_engineering.py))*
 
 ### 3. Run Analysis & Models
 ```bash
-# Run multicollinearity check
-python src/vif_check.py
+# Run multicollinearity, Granger causality, and structural break diagnostics
+python src/eda_and_diagnostics.py
 
-# Visualize structural breaks and historic shocks
-python src/structural_breaks.py
-
-# Fit models and output backtest figures
-python src/model_sarimax.py
-python src/model_prophet.py
-python src/model_xgboost.py
-
-# Calculate policymaker human headcount impact
-python src/human_impact_eval.py
+# Fit models (SARIMAX, Prophet, XGBoost) and output backtest figures/metrics
+python src/modeling.py
 ```
-*(Analysis & Modeling scripts: [src/vif_check.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/vif_check.py), [src/structural_breaks.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/structural_breaks.py), [src/model_sarimax.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/model_sarimax.py), [src/model_prophet.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/model_prophet.py), [src/model_xgboost.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/model_xgboost.py), and [src/human_impact_eval.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/human_impact_eval.py))*
+*(Analysis & Modeling scripts: [src/eda_and_diagnostics.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/eda_and_diagnostics.py) and [src/modeling.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/modeling.py))*
 
 ### 4. Launch the Streamlit Dashboard
 ```bash
 streamlit run src/app.py
 ```
-*(BI App: [src/app.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/app.py) | Ensure [ml_matrix.csv](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/data/processed/ml_matrix.csv) has been generated in `data/processed/` before launching)*
+*(BI App: [src/app.py](file:///c:/Users/sharm/OneDrive%20-%20University%20of%20East%20London/COMPLETE%20STUDIES/Dissaration%20(DS7010)/youth_unemployement_dissertation/src/app.py) | Ensure `ml_matrix.csv` has been generated in `data/processed/` before launching)*

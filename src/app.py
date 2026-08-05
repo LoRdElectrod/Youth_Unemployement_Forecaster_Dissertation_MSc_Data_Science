@@ -9,12 +9,10 @@ st.set_page_config(page_title="UK Youth Unemployment Forecasting BI Dashboard", 
 
 @st.cache_data
 def load_data():
-    file_path = "../data/processed/ml_matrix.csv"
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    file_path = os.path.join(project_root, "data", "processed", "ml_matrix.csv")
     if not os.path.exists(file_path):
-        # Fallback if executing directly from src/ folder
-        file_path = "data/processed/ml_matrix.csv"
-        if not os.path.exists(file_path):
-            return None
+        return None
     df = pd.read_csv(file_path)
     df['Date'] = pd.to_datetime(df['Date'])
     return df

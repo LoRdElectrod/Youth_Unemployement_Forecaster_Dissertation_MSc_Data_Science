@@ -1,3 +1,5 @@
 dist
 __pycache__
 plots/*.png
+PLOT_AFTER/
+Progress_doc.docx

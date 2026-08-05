@@ -3,6 +3,43 @@ import polars as pl
 import pandas as pd
 import os
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def download_us_macro():
+    """Fetches US Nonfarm Payrolls (PAYEMS) and US Unemployment Rate (UNRATE) from FRED."""
+    print("[-] Fetching US Nonfarm Payrolls (PAYEMS) from FRED...")
+    nfp_url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PAYEMS"
+    try:
+        nfp_df = pd.read_csv(nfp_url)
+        nfp_df.columns = ["Date", "US_NFP"]
+    except Exception as e:
+        print(f"[!] Warning: Failed to fetch NFP from FRED ({e}). Using existing raw/us_macro_data.csv if available.")
+        return
+
+    print("[-] Fetching US Unemployment Rate (UNRATE) from FRED...")
+    unrate_url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=UNRATE"
+    try:
+        unrate_df = pd.read_csv(unrate_url)
+        unrate_df.columns = ["Date", "US_Unemployment_Rate"]
+    except Exception as e:
+        print(f"[!] Warning: Failed to fetch UNRATE from FRED ({e}). Using existing raw/us_macro_data.csv if available.")
+        return
+
+    print("[-] Merging datasets on Date...")
+    us_macro = pd.merge(nfp_df, unrate_df, on="Date", how="inner")
+    
+    # Ensure date is strictly formatted as YYYY-MM-DD
+    us_macro['Date'] = pd.to_datetime(us_macro['Date']).dt.strftime('%Y-%m-%d')
+
+    output_dir = os.path.join(PROJECT_ROOT, "data", "raw")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    file_path = os.path.join(output_dir, "us_macro_data.csv")
+    us_macro.to_csv(file_path, index=False)
+    
+    print(f"[+] Success! Saved US Macro data to {file_path}")
+    print(us_macro.tail())
+
 def clean_unemployment(file_path, region_name):
     print(f"[*] Ingesting {region_name} Unemployment Data...")
     df = pl.read_csv(
@@ -97,20 +134,19 @@ def process_bank_rate(file_path):
     df = df.rename({"Rate": "BoE_Base_Rate"})
     return df
 
-#New Data thing, but with specific sheet name
 def process_rti_data(file_path):
     print("[*] Ingesting HMRC RTI Excel Data...")
-    # 1. Read sheet 7 skipping the first 6 metadata header rows
+    # Read sheet 7 skipping the first 6 metadata header rows
     pdf = pd.read_excel(file_path, sheet_name="7. Employees (NUTS1)", header=6)
     
-    # 2. Filter target columns
+    # Filter target columns
     regions_of_interest = ["London", "North East"]
     pdf = pdf[["Date"] + regions_of_interest].dropna()
     
-    # 3. Convert to Polars
+    # Convert to Polars
     df = pl.from_pandas(pdf)
     
-    # 4. Unpivot from wide to long format
+    # Unpivot from wide to long format
     df_long = df.unpivot(
         index="Date",
         on=regions_of_interest,
@@ -118,7 +154,7 @@ def process_rti_data(file_path):
         value_name="Payrolled_Employees"
     )
     
-    # 5. Parse dates (e.g., "July 2014") and extract Year/Quarter
+    # Parse dates (e.g., "July 2014") and extract Year/Quarter
     df_parsed = df_long.with_columns(
         pl.col("Date").str.strptime(pl.Date, "%B %Y").alias("Date_Parsed")
     ).with_columns(
@@ -126,21 +162,49 @@ def process_rti_data(file_path):
         pl.col("Date_Parsed").dt.quarter().alias("Quarter")
     )
     
-    # 6. Group by Region, Year, Quarter and calculate quarterly mean
+    # Group by Region, Year, Quarter and calculate quarterly mean
     df_quarterly = df_parsed.group_by(["Region", "Year", "Quarter"]).agg(
         pl.col("Payrolled_Employees").mean().alias("RTI_Payrolled_Employees")
     ).sort(["Region", "Year", "Quarter"])
     
-    # 7. Map back to quarter-end date
+    # Map back to quarter-end date
     df_final = df_quarterly.with_columns(
         pl.date(pl.col("Year"), pl.col("Quarter") * 3, 1).dt.month_end().alias("Date")
     ).select(["Date", "Region", "RTI_Payrolled_Employees"])
     
     return df_final
 
+def process_us_macro(file_path):
+    print("[*] Ingesting US Macro Data...")
+    df = pl.read_csv(file_path, infer_schema_length=10000)
+    
+    # Parse date and extract Year/Quarter
+    df_parsed = df.with_columns(
+        pl.col("Date").str.strptime(pl.Date, "%Y-%m-%d").alias("Date_Parsed")
+    ).with_columns(
+        pl.col("Date_Parsed").dt.year().alias("Year"),
+        pl.col("Date_Parsed").dt.quarter().alias("Quarter")
+    )
+    
+    # Group by Year and Quarter, calculating the mean for the US variables
+    df_quarterly = df_parsed.group_by(["Year", "Quarter"]).agg([
+        pl.col("US_NFP").mean().alias("US_NFP"),
+        pl.col("US_Unemployment_Rate").mean().alias("US_Unemployment_Rate")
+    ]).sort(["Year", "Quarter"])
+    
+    # Map back to quarter-end date to align with the rest of the pipeline
+    df_final = df_quarterly.with_columns(
+        pl.date(pl.col("Year"), pl.col("Quarter") * 3, 1).dt.month_end().alias("Date")
+    ).select(["Date", "US_NFP", "US_Unemployment_Rate"])
+    
+    return df_final
+
 def build_master_dataset():
+    # Step 0: Download fresh US macro data
+    download_us_macro()
+
     print("[-] Building extended master dataset...")
-    raw_dir = "data/raw"
+    raw_dir = os.path.join(PROJECT_ROOT, "data", "raw")
     
     # 1. Process all raw data files
     df_lon = clean_unemployment(os.path.join(raw_dir, "unemployement_london.csv"), "London")
@@ -151,13 +215,15 @@ def build_master_dataset():
     df_inf = process_inflation(os.path.join(raw_dir, "monthly_inflation_data.csv"))
     df_vac = process_vacancies(os.path.join(raw_dir, "VACS01_Vacancies_IN_UK_cleaned_bit.csv"))
     df_rate = process_bank_rate(os.path.join(raw_dir, "Bank Rate history and data  Bank of England Database.csv"))
-    
-    # Pass the downloaded Excel file name here
     df_rti = process_rti_data(os.path.join(raw_dir, "Earnings and employment from Pay As You Earn Real Time Information.xlsx"))
     
-    # 2. Merge Exact Date Matches
+    # Process US Macro Data
+    df_us_macro = process_us_macro(os.path.join(raw_dir, "us_macro_data.csv"))
+    
+    # 2. Merge Exact Date Matches (Inflation, Vacancies, and now US Macro)
     master = df_unemp.join(df_inf, on="Date", how="left")
     master = master.join(df_vac, on="Date", how="left")
+    master = master.join(df_us_macro, on="Date", how="left")
     
     # 3. Merge RTI Data
     master = master.join(df_rti, on=["Date", "Region"], how="left")
@@ -175,10 +241,11 @@ def build_master_dataset():
     master = master.sort(["Region", "Date"])
     
     # 7. Save output
-    os.makedirs("../data/processed", exist_ok=True)
-    master.write_csv("../data/processed/master_dataset.csv")
+    processed_dir = os.path.join(PROJECT_ROOT, "data", "processed")
+    os.makedirs(processed_dir, exist_ok=True)
+    master.write_csv(os.path.join(processed_dir, "master_dataset.csv"))
     print(f"[+] Extended Master dataset saved! Rows: {master.height}")
-    print(master.head())
+    print(master.head().to_pandas())
 
 if __name__ == "__main__":
     build_master_dataset()

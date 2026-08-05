@@ -2,10 +2,13 @@ import pandas as pd
 import numpy as np
 import os
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 def engineer_features():
     print("[-] Initiating Feature Engineering & GDP Splicing...")
-    input_path = "../data/processed/master_dataset.csv"
-    output_path = "../data/processed/ml_matrix.csv"
+    processed_dir = os.path.join(PROJECT_ROOT, "data", "processed")
+    input_path = os.path.join(processed_dir, "master_dataset.csv")
+    output_path = os.path.join(processed_dir, "ml_matrix.csv")
     
     if not os.path.exists(input_path):
         print("[!] Error: master_dataset.csv not found.")
@@ -38,7 +41,7 @@ def engineer_features():
 
     # Apply the splicing per region just to the GDP column
     df['GDP_Value_mil'] = df.groupby('Region')['GDP_Value_mil'].transform(splice_gdp_series)
-    print(f"[✓] Successfully spliced trailing GDP using 0.9% OBR/IMF annual forecast.")
+    print(f"[+] Successfully spliced trailing GDP using 0.9% OBR/IMF annual forecast.")
 
     # 3. Engineer Lag Features (The "Delay Effect")
     print("[-] Generating Lag Features for XGBoost...")
@@ -48,7 +51,9 @@ def engineer_features():
         'Inflation_Rate': [1, 4],
         'UK_Vacancies_Thousands': [1, 4],
         'BoE_Base_Rate': [1, 2, 4], # Interest rates have longer delay impacts
-        'RTI_Payrolled_Employees': [1, 4] # <-- NEW ADDITION: Capturing HMRC payroll momentum
+        'RTI_Payrolled_Employees': [1, 4],
+        'US_NFP': [1, 4],                 # <-- US Nonfarm Payrolls
+        'US_Unemployment_Rate': [1, 4]    # <-- US Unemployment
     }
     
     for col, lag_list in lags.items():
@@ -67,7 +72,7 @@ def engineer_features():
     # We will drop these initial rows so XGBoost gets a perfectly clean matrix
     ml_matrix = df.dropna().copy()
     
-    os.makedirs("../data/processed", exist_ok=True)
+    os.makedirs(processed_dir, exist_ok=True)
     ml_matrix.to_csv(output_path, index=False)
     
     print(f"[+] Success! Machine Learning Matrix saved to: {output_path}")
