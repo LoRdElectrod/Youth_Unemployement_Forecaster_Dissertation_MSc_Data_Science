@@ -111,14 +111,14 @@ Each model was trained on historical data up to **2023 Q4** and evaluated agains
 Here is the visual comparison of forecasts across the different paradigms:
 
 #### London Model Forecasts
-- **SARIMAX Model Forecast:** ![SARIMAX London](final_plots/SARIMAX_LONDON_RTI_scripting.png)
-- **Prophet Model Forecast:** ![Prophet London](final_plots/Prophet_Baseline_LONDON_RTI.png)
-- **XGBoost Model Forecast:** ![XGBoost London](final_plots/XGBOOST_london_RTI.png)
+- **SARIMAX Model Forecast:** ![SARIMAX London](docs/figures/SARIMAX_LONDON.png)
+- **Prophet Model Forecast:** ![Prophet London](docs/figures/Prophet_London.png)
+- **XGBoost Model Forecast:** ![XGBoost London](docs/figures/Xgboost_London.png)
 
 #### North East Model Forecasts
-- **SARIMAX Model Forecast:** ![SARIMAX North East](final_plots/SARIMAX_NORTH_EAST_RTI_scripting.png)
-- **Prophet Model Forecast:** ![Prophet North East](final_plots/Prophet_Baseline_North_East_RTI.png)
-- **XGBoost Model Forecast:** ![XGBoost North East](final_plots/XGBOOST_north_East_RTI.png)
+- **SARIMAX Model Forecast:** ![SARIMAX North East](docs/figures/SARIMAX_NORTH_EAST.png)
+- **Prophet Model Forecast:** ![Prophet North East](docs/figures/Prophet_NORTH_EAST.png)
+- **XGBoost Model Forecast:** ![XGBoost North East](docs/figures/Xgboost_NORTH_EAST.png)
 
 ### Statistical Benchmarking (MAE & RMSE)
 

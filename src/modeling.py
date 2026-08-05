@@ -185,21 +185,26 @@ def run_modeling_pipeline():
         docs_fig_dir = os.path.join(PROJECT_ROOT, "docs", "figures")
         os.makedirs(docs_fig_dir, exist_ok=True)
         
-        plt.figure(figsize=(10, 5))
-        plt.plot(train['Date'], train[target], label='Training Data (Actual)', color='black')
-        plt.plot(test['Date'], test[target], label='Test Data (Actual)', color='blue', marker='o')
-        plt.plot(test['Date'], y_pred_xgb, label='XGBoost Forecast', color='green', linestyle='--', marker='x')
-        plt.plot(test['Date'], y_pred_prophet, label='Prophet Forecast', color='red', linestyle=':', marker='.')
-        plt.plot(test['Date'], y_pred_sarimax, label='SARIMAX Forecast', color='orange', linestyle='-.', marker='+')
+        # Define model predictions, labels, and file names
+        model_plots = [
+            (y_pred_sarimax, 'SARIMAX', 'orange', 'SARIMAX_LONDON' if region == "London" else 'SARIMAX_NORTH_EAST'),
+            (y_pred_prophet, 'Prophet', 'red', 'Prophet_London' if region == "London" else 'Prophet_NORTH_EAST'),
+            (y_pred_xgb, 'XGBoost', 'green', 'Xgboost_London' if region == "London" else 'Xgboost_NORTH_EAST')
+        ]
         
-        plt.title(f'Model Forecasting Performance Backtest: {region} (2024-2025)')
-        plt.xlabel('Date')
-        plt.ylabel('Youth Unemployment Rate (%)')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        doc_path = os.path.join(docs_fig_dir, f"forecast_comparison_{region.replace(' ', '_').lower()}.png")
-        save_and_show_modeling_plot(f"forecast_comparison_{region.replace(' ', '_').lower()}.png", doc_path)
+        for pred, label, color, base_name in model_plots:
+            plt.figure(figsize=(10, 5))
+            plt.plot(train['Date'], train[target], label='Training Data (Actual)', color='black')
+            plt.plot(test['Date'], test[target], label='Test Data (Actual)', color='blue', marker='o')
+            plt.plot(test['Date'], pred, label=f'{label} Forecast', color=color, linestyle='--', marker='x')
+            plt.title(f'{label} Forecasting Performance Backtest: {region} (2024-2025)')
+            plt.xlabel('Date')
+            plt.ylabel('Youth Unemployment Rate (%)')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            doc_path = os.path.join(docs_fig_dir, f"{base_name}.png")
+            save_and_show_modeling_plot(f"{base_name}.png", doc_path)
         
         # --- VISUALIZATION 2: Feature Importance (XGBoost) ---
         plt.figure(figsize=(10, 6))
